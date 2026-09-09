@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ahrefs DR Checker</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: #f5f7fb;
+      color: #1f2937;
+    }
+
+    .header {
+      background: #111827;
+      color: white;
+      padding: 20px 30px;
+    }
+
+    .header-inner {
+      max-width: 1200px;
+      margin: auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo {
+      font-size: 22px;
+      font-weight: bold;
+    }
+
+    .subtitle {
+      font-size: 13px;
+      color: #cbd5e1;
+      margin-top: 4px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 30px auto;
+      padding: 0 20px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+    }
+
+    h2 {
+      margin-top: 0;
+      font-size: 20px;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 220px;
+      resize: vertical;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      padding: 15px;
+      font-size: 14px;
+      font-family: monospace;
+      outline: none;
+    }
+
+    textarea:focus {
+      border-color: #2563eb;
+    }
+
+    .buttons {
+      display: flex;
+      gap: 10px;
+      margin-top: 15px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      border: none;
+      border-radius: 7px;
+      padding: 11px 18px;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .primary {
+      background: #2563eb;
+      color: white;
+    }
+
+    .primary:hover {
+      background: #1d4ed8;
+    }
+
+    .secondary {
+      background: #e5e7eb;
+      color: #111827;
+    }
+
+    .secondary:hover {
+      background: #d1d5db;
+    }
+
+    .danger {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+
+    .stat {
+      background: white;
+      padding: 18px;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    .stat-title {
+      font-size: 13px;
+      color: #6b7280;
+      margin-bottom: 7px;
+    }
+
+    .stat-value {
+      font-size: 25px;
+      font-weight: bold;
+    }
+
+    .progress-container {
+      display: none;
+      margin-top: 20px;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 10px;
+      background: #e5e7eb;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .progress {
+      width: 0%;
+      height: 100%;
+      background: #2563eb;
+      transition: width 0.3s;
+    }
+
+    .progress-text {
+      margin-top: 8px;
+      font-size: 13px;
+      color: #6b7280;
+    }
+
+    .table-wrapper {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th {
+      background: #f3f4f6;
+      text-align: left;
+      padding: 13px;
+      font-size: 13px;
+    }
+
+    td {
+      padding: 12px 13px;
+      border-bottom: 1px solid #e5e7eb;
+      font-size: 14px;
+    }
+
+    .dr {
+      font-weight: bold;
+    }
+
+    .error {
+      color: #dc2626;
+      font-weight: bold;
+    }
+
+    .empty {
+      text-align: center;
+      padding: 40px;
+      color: #6b7280;
+    }
+
+    @media (max-width: 700px) {
+      .stats {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .header-inner {
+        display: block;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="header">
+    <div class="header-inner">
+      <div>
+        <div class="logo">Ahrefs DR Checker</div>
+        <div class="subtitle">Bulk Domain Rating Checker</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="container">
+
+    <div class="card">
+      <h2>Check Domain Rating</h2>
+
+      <p style="color:#6b7280;font-size:14px;">
+        Enter one domain per line.
+      </p>
+
+      <textarea id="domains" placeholder="example.com
+example.org
+example.net"></textarea>
+
+      <div class="buttons">
+        <button class="primary" onclick="checkDR()">
+          Check DR
+        </button>
+
+        <button class="secondary" onclick="clearDomains()">
+          Clear
+        </button>
+      </div>
+
+      <div class="progress-container" id="progressContainer">
+        <div class="progress-bar">
+          <div class="progress" id="progress"></div>
+        </div>
+
+        <div class="progress-text" id="progressText">
+          Preparing...
+        </div>
+      </div>
+    </div>
+
+    <div class="stats">
+
+      <div class="stat">
+        <div class="stat-title">Total Domains</div>
+        <div class="stat-value" id="totalCount">0</div>
+      </div>
+
+      <div class="stat">
+        <div class="stat-title">Completed</div>
+        <div class="stat-value" id="completedCount">0</div>
+      </div>
+
+      <div class="stat">
+        <div class="stat-title">Errors</div>
+        <div class="stat-value" id="errorCount">0</div>
+      </div>
+
+      <div class="stat">
+        <div class="stat-title">Average DR</div>
+        <div class="stat-value" id="averageDR">0</div>
+      </div>
+
+    </div>
+
+    <div class="card">
+
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;flex-wrap:wrap;gap:10px;">
+
+        <h2 style="margin:0;">Results</h2>
+
+        <div class="buttons" style="margin:0;">
+          <button class="secondary" onclick="copyResults()">
+            Copy Results
+          </button>
+
+          <button class="secondary" onclick="downloadCSV()">
+            Download CSV
+          </button>
+
+          <button class="danger" onclick="clearResults()">
+            Clear Results
+          </button>
+        </div>
+
+      </div>
+
+      <div class="table-wrapper">
+
+        <table>
+
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Domain</th>
+              <th>Domain Rating</th>
+            </tr>
+          </thead>
+
+          <tbody id="resultsBody">
+
+            <tr>
+              <td colspan="3" class="empty">
+                No results yet.
+              </td>
+            </tr>
+
+          </tbody>
+
+        </table>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <script>
+
+    /*
+      BACKEND URL WILL BE ADDED LATER.
+
+      We are intentionally NOT putting the Ahrefs API key
+      anywhere in this website.
+    */
+
+    const BACKEND_URL = "";
+
+
+    let results = [];
+
+
+    function cleanDomain(domain) {
+
+      domain = domain.trim();
+
+      if (!domain) {
+        return "";
+      }
+
+      domain = domain
+        .replace(/^https?:\/\//i, "")
+        .replace(/^www\./i, "");
+
+      domain = domain.split("/")[0];
+      domain = domain.split("?")[0];
+      domain = domain.split("#")[0];
+
+      return domain.trim().toLowerCase();
+    }
+
+
+    function getDomains() {
+
+      const text = document.getElementById("domains").value;
+
+      const domains = text
+        .split(/\r?\n/)
+        .map(cleanDomain)
+        .filter(Boolean);
+
+      return [...new Set(domains)];
+    }
+
+
+    async function checkDR() {
+
+      const domains = getDomains();
+
+      if (domains.length === 0) {
+        alert("Please enter at least one domain.");
+        return;
+      }
+
+
+      if (!BACKEND_URL) {
+
+        alert(
+          "The website interface is ready.\n\n" +
+          "We still need to connect the secure Ahrefs backend.\n\n" +
+          "Do not enter your Ahrefs API key here."
+        );
+
+        return;
+      }
+
+
+      results = [];
+
+      updateStats();
+
+      document.getElementById("progressContainer").style.display = "block";
+
+
+      try {
+
+        const response = await fetch(BACKEND_URL, {
+
+          method: "POST",
+
+          headers: {
+            "Content-Type": "application/json"
+          },
+
+          body: JSON.stringify({
+            domains: domains
+          })
+
+        });
+
+
+        if (!response.ok) {
+          throw new Error("Server error: " + response.status);
+        }
+
+
+        const data = await response.json();
+
+
+        if (!data.results) {
+          throw new Error("Invalid server response.");
+        }
+
+
+        results = data.results;
+
+        renderResults();
+
+        updateStats();
+
+        setProgress(100, "Completed");
+
+
+      } catch (error) {
+
+        console.error(error);
+
+        alert(
+          "Something went wrong while checking the domains.\n\n" +
+          error.message
+        );
+
+        setProgress(0, "Error");
+
+      }
+
+    }
+
+
+    function renderResults() {
+
+      const body = document.getElementById("resultsBody");
+
+      body.innerHTML = "";
+
+
+      if (results.length === 0) {
+
+        body.innerHTML =
+          '<tr><td colspan="3" class="empty">No results.</td></tr>';
+
+        return;
+      }
+
+
+      results.forEach((item, index) => {
+
+        const row = document.createElement("tr");
+
+        const dr =
+          item.dr !== undefined &&
+          item.dr !== null &&
+          item.dr !== ""
+            ? item.dr
+            : "Error";
+
+
+        const drClass =
+          dr === "Error"
+            ? "error"
+            : "dr";
+
+
+        row.innerHTML = `
+          <td>${index + 1}</td>
+          <td>${escapeHTML(item.domain || "")}</td>
+          <td class="${drClass}">${escapeHTML(String(dr))}</td>
+        `;
+
+
+        body.appendChild(row);
+
+      });
+
+    }
+
+
+    function updateStats() {
+
+      const total = results.length;
+
+      const completed =
+        results.filter(
+          r =>
+            r.dr !== undefined &&
+            r.dr !== null &&
+            r.dr !== "" &&
+            r.dr !== "Error"
+        ).length;
+
+
+      const errors = total - completed;
+
+
+      const drValues =
+        results
+          .map(r => Number(r.dr))
+          .filter(n => !isNaN(n));
+
+
+      const average =
+        drValues.length
+          ? (
+              drValues.reduce((a, b) => a + b, 0) /
+              drValues.length
+            ).toFixed(1)
+          : 0;
+
+
+      document.getElementById("totalCount").textContent = total;
+
+      document.getElementById("completedCount").textContent = completed;
+
+      document.getElementById("errorCount").textContent = errors;
+
+      document.getElementById("averageDR").textContent = average;
+
+    }
+
+
+    function setProgress(percent, text) {
+
+      document.getElementById("progress").style.width =
+        percent + "%";
+
+      document.getElementById("progressText").textContent =
+        text;
+
+    }
+
+
+    function clearDomains() {
+
+      document.getElementById("domains").value = "";
+
+    }
+
+
+    function clearResults() {
+
+      results = [];
+
+      renderResults();
+
+      updateStats();
+
+      document.getElementById("progressContainer").style.display =
+        "none";
+
+    }
+
+
+    function copyResults() {
+
+      if (results.length === 0) {
+        alert("There are no results to copy.");
+        return;
+      }
+
+
+      const text =
+        "Domain\tDomain Rating\n" +
+        results
+          .map(r => `${r.domain}\t${r.dr}`)
+          .join("\n");
+
+
+      navigator.clipboard.writeText(text)
+        .then(() => {
+          alert("Results copied.");
+        })
+        .catch(() => {
+          alert("Unable to copy results.");
+        });
+
+    }
+
+
+    function downloadCSV() {
+
+      if (results.length === 0) {
+        alert("There are no results to download.");
+        return;
+      }
+
+
+      let csv = "Domain,Domain Rating\n";
+
+
+      results.forEach(r => {
+
+        const domain =
+          `"${String(r.domain || "").replace(/"/g, '""')}"`;
+
+        const dr =
+          `"${String(r.dr || "").replace(/"/g, '""')}"`;
+
+        csv += `${domain},${dr}\n`;
+
+      });
+
+
+      const blob =
+        new Blob([csv], {
+          type: "text/csv;charset=utf-8;"
+        });
+
+
+      const url =
+        URL.createObjectURL(blob);
+
+
+      const link =
+        document.createElement("a");
+
+
+      link.href = url;
+
+      link.download =
+        "ahrefs-dr-results.csv";
+
+      link.click();
+
+
+      URL.revokeObjectURL(url);
+
+    }
+
+
+    function escapeHTML(value) {
+
+      return value
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+
+    }
+
+  </script>
+
+</body>
+</html>
